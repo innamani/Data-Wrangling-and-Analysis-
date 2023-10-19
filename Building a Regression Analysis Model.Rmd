@@ -1,6 +1,6 @@
 ---
-title: "Final Report"
-author: "NNAMANI IA"
+title: "Modeling Hantavirus Prevalence in Paraguay"
+author: "NNAMANI EVANS"
 date: '2022-05-17'
 output:
   pdf_document:
