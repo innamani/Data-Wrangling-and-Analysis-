@@ -1,0 +1,191 @@
+---
+title: "Final Report"
+author: "NNAMANI IA"
+date: '2022-05-17'
+output:
+  pdf_document:
+    toc: FALSE
+    toc_depth: 2
+    number_sections: FALSE
+---
+
+
+
+```{r echo=F, warning=F, message=F}
+
+hanta<- read.csv("cleaned_data.csv")
+
+library(tidyverse)
+library(summarytools)
+library(table1)
+library(epiDisplay)
+hantavirus1<-hanta[,c("TK","Species","SeroStatus","Age","Sex","Weight","ReproductiveStatus","RepStatus","Session","Recapture","Session.Recapture","Mgrid","Degradation")]
+
+hantavirus<-hantavirus1%>%
+  mutate(Age=factor(Age,levels = c(1,2,3),labels = c("Juvenile","Subadult","Adult")),Sex=factor(Sex,levels = c(2,1),labels = c("Female","Male")),Session=factor(Session,levels = c(1,2,3),labels=c("Pre Trt(JJ)","ON","FM")),SeroStatus=factor(SeroStatus,levels = c(0,1),labels = c("Negative","Positive")),Recapture=factor(Recapture,levels = c(0,1),labels = c("Unique","Non-Unique")),Session.Recapture=factor(Session.Recapture,levels = c(0,1),labels = c("Unique","Non-Unique")),RepStatus=factor(RepStatus,levels=c(0,1,2), labels = c("Not Available","Active","Non-Active")),Degradation=factor(Degradation,levels = c(1,2,3),labels=c("Most","Moderate","Least")),Classes=ifelse(hantavirus1$Species=="Akodon montensis","Akodon montensis", ifelse(hantavirus1$Species=="Hylaeamys megacephalus","Hylaeamys megacephalus", ifelse(hantavirus1$Species=="Oligoryzomys nigripes","Oligoryzomys nigripes", ifelse(hantavirus1$Species=="Oligoryzomys mattogrossae","Oligoryzomys mattogrossae","others")))))
+```
+
+
+
+# Recapture Issue
+
+One major concern of this data is the dependence of the outcome variable on the recapture status of rodents. Initially, it was assumed that any rodent captured once for each session of collection is considered unique regardless of if it was captured in another session. So, I would generate a function to take this data and calculate the prevalence considering if a rodent was captured more than once in the whole collection, and then, in-between sessions.
+```{r echo=F, warning=F, message=F}
+hantavirus2<-hantavirus[(hantavirus$Recapture=="Unique"),]
+hantavirus3<-hantavirus[(hantavirus$Session.Recapture=="Unique"),]
+data.set<-list(hantavirus,hantavirus2)
+
+
+pcnt<-function(df){
+  Total<-dim(df)[1]
+  c<-df[(paste0(df$SeroStatus)=="Positive"),]
+  Positive<-dim(c)[1]
+  Pcnt.Positive<-(Positive/Total)*100
+  whole.data<-cbind.data.frame(Total, Positive, Pcnt.Positive)
+  return(whole.data)
+}
+
+    
+d<-pcnt(df=hantavirus)
+e<-pcnt(df=hantavirus2)
+g<-pcnt(df=hantavirus3)
+f<-rbind.data.frame(d,e,g)
+rownames(f)<-c("With repeat", "without repeat","without sessional repeat")
+knitr::kable(f, caption = "Table showing Percentage Prevalence considering Recapture")
+hantavirus2<-na.omit(hantavirus2)
+```
+
+It is vivid that the outcome variable really depends on the recapture status of the rodents, and this is a violation of one of the assumptions, and a major assumption in logistic regression. Hence, I would eliminate the those repeated data point before analyzing the data.
+
+
+# Distribution
+```{r,fig.height=6,fig.width=10, echo=F, warning=F}
+par(mfrow=c(2,3))
+ggplot(hantavirus2,aes(x=Session))+
+  geom_bar(aes(fill=Age))+
+  facet_wrap(~Classes)
+```
+
+One thing this distribution points to is the fact that there are poor sample size for the juveniles. Hence, I do not expect this analysis to have any reasonable forecast on the association of they might have with seroprevalence. It is worthy of note that most studies believe that the juveniles have a conferred immunity transferred vertically from their mothers. We cannot say this with our data, nor can we assume this since this conclusions rarely comes from a cohort study.
+
+
+# Initial Analysis & Assumptions check
+
+This analysis was arrived at by a step-wise fitting of data in a logistic regression model, then adding more variables, then using chi-square test to confirm that the new fit AIC and the previous were not different.
+
+
+```{r echo=F, warning=F, message=F}
+
+hanta.log1<- glm(SeroStatus~Age,family=binomial(link="logit"),data=hantavirus2)
+
+
+hanta.log2<-glm(SeroStatus~Age+Weight,family=binomial(link="logit"),data=hantavirus2)
+
+
+hanta.log3<-glm(SeroStatus~Age+Weight+Sex,family=binomial(link="logit"),data=hantavirus2)
+
+
+hanta.log4<-glm(SeroStatus~Age+Weight+Sex+RepStatus,family=binomial(link="logit"),data=hantavirus2)
+
+hanta.log5<-glm(SeroStatus~Age+Weight+Sex+RepStatus+Session,family=binomial(link="logit"),data=hantavirus2)
+
+
+hanta.log6<-glm(SeroStatus~Age+Weight+Sex+RepStatus+Session+Degradation,family=binomial(link="logit"),data=hantavirus2)
+
+
+anova(hanta.log5,hanta.log6,test = "Chisq")
+iii<-summary(hanta.log6)
+knitr::kable(iii$coefficients[-1,])
+
+c<-logistic.display(hanta.log6)
+
+knitr::kable(c$table, caption = "Table of Odd Ratios and Wald Test")
+```
+
+
+From the final fit, it can be seen that being male is associated with being seropositive for hantavirus with odd ratio ranging from 1-3.92. However, I would like to account for the biology of the main rodent reservoirs of interest below.
+
+
+```{r echo=FALSE, MESSAGE=FALSE, warning=F}
+# Accounting for the biology
+akodon<- hantavirus2[(which(hantavirus2$Species=="Akodon montensis")),]
+oligoryzomys <- hantavirus2[(which(hantavirus2$Species=="Oligoryzomys nigripes")),]
+
+```
+
+
+# Akodon montensis
+
+```{r echo=FALSE, MESSAGE=FALSE, warning=F}
+
+akodon.log<-glm(SeroStatus~Age+Weight+Sex+RepStatus+Session+Degradation,family=binomial(link="logit"),data=akodon)
+ii<-summary(akodon.log)
+knitr::kable(ii$coefficients[-1,])
+d<-logistic.display(akodon.log)
+knitr::kable(d$table, caption = "Table of Odd Ratios after Accounting for A. montensis Biology")
+```
+
+For Akodon montensis, being seropositive is associated with being an adult, their weight and the season (between February and March).
+
+# Oligoryzomys nigripes
+
+```{r echo=FALSE, MESSAGE=FALSE, warning=F}
+oligory.log<-glm(SeroStatus~Age+Weight+Sex+RepStatus+Session+Degradation,family=binomial(link="logit"),data=oligoryzomys)
+i<-summary(oligory.log)
+knitr::kable(i$coefficients[-1,])
+e<-logistic.display(oligory.log)
+knitr::kable(e$table, caption = "Table of Odd Ratios after Accounting for O. nigripes Biology")
+```
+
+
+For the most part, O. nigripes agrees with our initial analysis of males being significantly associated with being seropositive. Again, we see that it is associated with weight but then, with the reproductive status.
+
+
+# Linear Mixed Model
+
+On the other hand, what can be done to avoid the loss of data as I have previously removed is to use a linear mixed model. So, I would use the `lmer` to analyze the initial data.
+
+
+```{r echo=FALSE, MESSAGE=FALSE, warning=F}
+library(lme4)
+
+hanta.log7<-glmer(SeroStatus~Age+Weight+Sex+RepStatus+Session+Degradation+(1|Mgrid),data=hantavirus,family=binomial)
+
+isSingular(hanta.log7,tol=1e-4)
+```
+
+After fitting the data for a linear mixed model, with the grid as the fixed effect, the fit was not possible because the model is almost or near singular. to confirm that, I used the `isSingular` which returned true.
+
+The solution here is to fit these variable singly or to analyze the data using a maximum monotone likelihood test, which would yield estimates equivalent to a single fit. 
+
+```{r echo=FALSE, MESSAGE=FALSE, warning=F}
+
+hanta.log8<-logistf::logistf(SeroStatus~Age+Weight+Sex+RepStatus+Session+Degradation,data=hantavirus)
+f<-summary(hanta.log8)
+g<-data.frame(f$coefficients[-1],f$ci.lower[-1],f$ci.upper[-1],f$prob[-1])
+colnames(g)<-c("Estimate","Lower CI", "Upper CI", "P-value")
+knitr::kable(g,caption = "Result of Linear Mixed Effects models after Firth Correction and Penalization of Complicated Fit")
+```
+
+# Seroprevalence by Habitat
+
+```{r echo=FALSE, warning=F, message=F}
+ggplot(hantavirus,aes(x=Degradation))+
+  geom_bar(aes(fill=SeroStatus), position="dodge")+
+  ggtitle("Seroprevalence Distribution with Habitat Degradation")+
+  xlab("Habitat Degradation Level")+
+  ylab("Serostatus")+
+  guides(fill=guide_legend(title='SeroStatus'))+
+  theme(title=,legend.position = c(.95, .95),
+    legend.justification = c("right", "top"),
+    legend.box.just = "right",
+    legend.margin = margin(6, 6, 6, 6))
+
+
+seroprevalence<-function(df){
+  prevalence<-matrix(nrow=)
+  for (i in (1:length(df$Classes))){
+    prevalence$Specie[i]
+  }
+}
+```
