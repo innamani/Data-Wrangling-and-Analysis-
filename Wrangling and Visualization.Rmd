@@ -1,0 +1,165 @@
+---
+title: "Viruses Submission"
+author: "Nnamani Evans Ifebuche"
+date: "1/14/2022"
+output: 
+  html_document:
+    toc: TRUE
+    toc_depth: 3
+    toc_float: TRUE
+  
+    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=F, warning=F, message=FALSE}
+
+hantavirus<- read.csv("data/cleaned_data.csv")
+library(tidyverse)
+hantavirus1<-hantavirus[,c("TK","Species","SeroStatus","Age","Sex","Weight","ReproductiveStatus","RepStatus","Session","Recapture","Session.Recapture","Mgrid","Degradation")]
+
+
+hantavirus1<-hantavirus1%>%
+  mutate(Age=factor(Age,levels = c(1,2,3),labels = c("Juvenile","Subadult","Adult")),Sex=factor(Sex,levels = c(2,1),labels = c("Female","Male")),Session=factor(Session,levels = c(1,2,3),labels=c("Pre Trt(JJ)","ON","FM")),SeroStatus=factor(SeroStatus,levels = c(0,1),labels = c("Negative","Positive")),Recapture=factor(Recapture,levels = c(0,1),labels = c("Unique","Non-Unique")),
+Session.Recapture=factor(Session.Recapture,levels = c(0,1),labels = c("Unique","Non-Unique")),RepStatus=factor(RepStatus,levels=c(0,1,2), labels = c("Not Available","Active","Non-Active")),Degradation=factor(Degradation,levels = c(1,2,3),labels=c("Most","Moderate","Least")),Classes=ifelse(hantavirus1$Species=="Akodon montensis","Akodon montensis", ifelse(hantavirus1$Species=="Hylaeamys megacephalus","Hylaeamys megacephalus", ifelse(hantavirus1$Species=="Oligoryzomys nigripes","Oligoryzomys nigripes", ifelse(hantavirus1$Species=="Oligoryzomys mattogrossae","Oligoryzomys mattogrossae","others")))))
+
+
+
+recapture<-hantavirus1[which(hantavirus1$Recapture=="Unique"),]#Unique captures
+
+recaptureH<- recapture[recapture$Species=="Oligoryzomys nigripes",]
+
+
+#number of sexes in each grid
+am<-nrow(recaptureH[recaptureH$Sex=="Male" & recaptureH$Mgrid=="A",])
+bm<-nrow(recaptureH[recaptureH$Sex=="Male" & recaptureH$Mgrid=="B",])
+cm<-nrow(recaptureH[recaptureH$Sex=="Male" & recaptureH$Mgrid=="C",])
+dm<-nrow(recaptureH[recaptureH$Sex=="Male" & recaptureH$Mgrid=="D",])
+gm<-nrow(recaptureH[recaptureH$Sex=="Male" & recaptureH$Mgrid=="G",])
+hm<-nrow(recaptureH[recaptureH$Sex=="Male" & recaptureH$Mgrid=="H",])
+
+numm1<-c(am,bm,cm,dm,gm,hm)
+num1s<- sum(numm1)
+numm<- c(am,bm,cm,dm,gm,hm,num1s)
+
+af<-nrow(recaptureH[recaptureH$Sex=="Female" & recaptureH$Mgrid=="A",])
+bf<-nrow(recaptureH[recaptureH$Sex=="Female" & recaptureH$Mgrid=="B",])
+cf<-nrow(recaptureH[recaptureH$Sex=="Female" & recaptureH$Mgrid=="C",])
+df<-nrow(recaptureH[recaptureH$Sex=="Female" & recaptureH$Mgrid=="D",])
+gf<-nrow(recaptureH[recaptureH$Sex=="Female" & recaptureH$Mgrid=="G",])
+hf<-nrow(recaptureH[recaptureH$Sex=="Female" & recaptureH$Mgrid=="H",])
+
+
+
+numf1<-c(af,bf,cf,df,gf,hf)
+numf1s<-sum(numf1)
+numf<-c(af,bf,cf,df,gf,hf,numf1s)
+
+#number of positives & negative per grid
+
+ap<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="A",])
+bp<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="B",])
+cp<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="C",])
+dp<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="D",])
+gp<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="G",])
+hp<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="H",])
+
+nump1<- c(ap,bp,cp,dp,gp,hp)
+nump1s<- sum(nump1)
+nump<-c(ap,bp,cp,dp,gp,hp,nump1s)
+
+an<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="A",])
+bn<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="B",])
+cn<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="C",])
+dn<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="D",])
+gn<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="G",])
+hn<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="H",])
+
+numn1<-c(an,bn,cn,dn,gn,hn)
+numn1s<-sum(numn1)
+numn<-c(an,bn,cn,dn,gn,hn,numn1s)
+
+#number of positives 
+
+
+
+labelsofGrid<-c("A","B","C","D","G","H","TOTAL")
+
+
+tab<-cbind.data.frame(labelsofGrid,paste0(numm,"/",numf),paste0(nump,"/",numn))
+colnames(tab)<-c("GRID","Male/Female","Positive/Negative")
+
+# For Male positives and negatives in each grid
+
+apm<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="A"& recaptureH$Sex=="Male",])
+bpm<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="B"& recaptureH$Sex=="Male",])
+cpm<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="C"& recaptureH$Sex=="Male",])
+dpm<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="D"& recaptureH$Sex=="Male",])
+gpm<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="G"& recaptureH$Sex=="Male",])
+hpm<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="H"& recaptureH$Sex=="Male",])
+
+numpm1<- c(apm,bpm,cpm,dpm,gpm,hpm)
+numpm1s<- sum(numpm1)
+numpm<-c(apm,bpm,cpm,dpm,gpm,hpm,numpm1s)
+
+anm<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="A"&recaptureH$Sex=="Male",])
+bnm<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="B"&recaptureH$Sex=="Male",])
+cnm<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="C"&recaptureH$Sex=="Male",])
+dnm<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="D"&recaptureH$Sex=="Male",])
+gnm<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="G"&recaptureH$Sex=="Male",])
+hnm<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="H"&recaptureH$Sex=="Male",])
+
+numnm1<-c(anm,bnm,cnm,dnm,gnm,hnm)
+numnm1s<-sum(numnm1)
+numnm<-c(anm,bnm,cnm,dnm,gnm,hnm,numnm1s)
+
+# For Female positives and negatives in each grid
+
+apf<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="A"& recaptureH$Sex=="Female",])
+bpf<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="B"& recaptureH$Sex=="Female",])
+cpf<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="C"& recaptureH$Sex=="Female",])
+dpf<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="D"& recaptureH$Sex=="Female",])
+gpf<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="G"& recaptureH$Sex=="Female",])
+hpf<-nrow(recaptureH[recaptureH$SeroStatus=="Positive" & recaptureH$Mgrid=="H"& recaptureH$Sex=="Female",])
+
+numpf1<- c(apf,bpf,cpf,dpf,gpf,hpf)
+numpf1s<- sum(numpf1)
+numpf<-c(apf,bpf,cpf,dpf,gpf,hpf,numpf1s)
+
+anf<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="A"& recaptureH$Sex=="Female",])
+bnf<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="B"& recaptureH$Sex=="Female",])
+cnf<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="C"& recaptureH$Sex=="Female",])
+dnf<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="D"& recaptureH$Sex=="Female",])
+gnf<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="G"& recaptureH$Sex=="Female",])
+hnf<-nrow(recaptureH[recaptureH$SeroStatus=="Negative" & recaptureH$Mgrid=="H"& recaptureH$Sex=="Female",])
+
+numnf1<-c(anf,bnf,cnf,dnf,gnf,hnf)
+numnf1s<-sum(numnf1)
+numnf<-c(anf,bnf,cnf,dnf,gnf,hnf,numnf1s)
+
+tab1<-cbind.data.frame(labelsofGrid,paste0(numpm,"/",numnm),paste0(numpf,"/",numnf))
+colnames(tab1)<-c("GRID","Male (Pos./Neg.)","Female(Pos./Neg.)")
+```
+# General Distribution
+
+The table in the next slide shows the grids, the number of females versus males in each grid, aw well as the number of seropositive versus seronegative rodents in each grid.
+```{r echo=F}
+
+knitr::kable(tab,align = "c",caption = "Table showing distribution of gender and seroprevalence within groups")
+
+```
+***
+# Gender and  Seroprevalence
+
+The table in the next slide shows the grids, the number of seropositive versus seronegative male rodents, and the number of seropositive versus seronegative female rodents in each grid.
+```{r echo=F}
+knitr::kable(tab1,align="c",caption = "Seroprevalence Distribution within Gender")
+
+```
+***
+
+
+
