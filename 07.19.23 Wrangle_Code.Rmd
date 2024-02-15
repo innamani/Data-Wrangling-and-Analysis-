@@ -1,0 +1,49 @@
+---
+title: "Metagenomics Functional analysis"
+author: "Evans Ifebuche Nnamani"
+date: "2023-07-14"
+output: pdf_document
+---
+
+```{r echo= F, message= F, warning= F}
+setwd("C:/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics")
+
+a1<-read.csv(file = "/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics/07.14.23 eggnog_contigs.txt", sep="\t", header = T)
+a2<-read.csv(file = "/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics/07.14.23eggnog_contigsa2.txt", sep="\t", header = T)
+a3<-read.csv(file = "/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics/07.14.23eggnog_contigsa3.txt", sep="\t", header = T)
+a4<-read.csv(file = "/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics/07.14.23eggnog_contigsa4.txt", sep="\t", header = T)
+a5<-read.csv(file = "/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics/07.14.23eggnog_contigsa5.txt", sep="\t", header = T)
+b1<-read.csv(file = "/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics/07.14.23eggnog_contigsb1.txt", sep="\t", header = T)
+b2<-read.csv(file = "/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics/07.14.23eggnog_contigsb2.txt", sep="\t", header = T)
+b3<-read.csv(file = "/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics/07.14.23eggnog_contigsb3.txt", sep="\t", header = T)
+b4<-read.csv(file = "/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics/07.14.23eggnog_contigsb4.txt", sep="\t", header = T)
+b5<-read.csv(file = "/Users/innamani/Documents/Research/R Sessions/Lab/Metagenomics/07.14.23eggnog_contigsb5.txt", sep="\t", header = T)
+
+
+m<-list(a1,a2,a3,a4,a5,b1,b2,b3,b4,b5)
+
+
+cleandata<-function(n){
+      n<-n[n$Best.Tax.Level== "Rodentia",]
+      n<-n[!n$E.Value>0.05,]
+      n<-n[!n$Gene.Name=="NA",]
+      return(n)
+}
+
+clean<-lapply(m,cleandata)
+
+names(clean)<-c("a1","a2","a3","a4","a5","b1","b2","b3","b4","b5")
+
+
+writing<-function(n){
+  for (i in (1:length(n))){
+     write.csv(n[i],file=paste0(names(n[i]),".csv"))
+  }
+}
+
+
+writing(n=clean)
+
+
+```
+
